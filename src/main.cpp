@@ -1,6 +1,6 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
-#include <ESP32Servo.h>
+#include <Servo.h>
 
 const char *ssid = "AvA";
 const char *password = "25802580";
@@ -32,16 +32,22 @@ hw_timer_t *timer = NULL; // 定义定时器句柄变量
 void IRAM_ATTR onTimer(); // 定时器中断处理函数
 void controlServo(String command);
 
-Servo servoThumb, servoIndex, servoMiddle, servoRing, servoPinky;
+Servo servo;
 
-const uint8_t thumbPin = 2;
-const uint8_t indexPin = 4;
-const uint8_t middlePin = 12;
-const uint8_t ringPin = 13;
-const uint8_t pinkyPin = 14;
+const uint8_t thumbPin = 13;
+const uint8_t indexPin = 14;
+const uint8_t middlePin = 15;
+const uint8_t ringPin = 16;
+const uint8_t pinkyPin = 4;
 
 void setup()
 {
+    servo.write(indexPin, 0);
+    servo.write(middlePin, 0);
+    servo.write(pinkyPin, 0);
+    servo.write(ringPin, 0);
+    servo.write(thumbPin, 0);
+
     Serial.begin(115200);
     WiFi.begin(ssid, password);
 
@@ -52,23 +58,6 @@ void setup()
     }
 
     Serial.println("Connected to WiFi");
-
-    ESP32PWM::allocateTimer(0);
-    ESP32PWM::allocateTimer(1);
-    ESP32PWM::allocateTimer(2);
-    ESP32PWM::allocateTimer(3);
-
-    servoPinky.setPeriodHertz(50);
-    servoIndex.setPeriodHertz(50);
-    servoMiddle.setPeriodHertz(50);
-    servoRing.setPeriodHertz(50);
-    servoThumb.setPeriodHertz(50);
-
-    servoThumb.attach(thumbPin, 500, 2500);   // 将舵机连接到引脚2
-    servoIndex.attach(indexPin, 500, 2500);   // 将舵机连接到引脚4
-    servoMiddle.attach(middlePin, 500, 2500); // 将舵机连接到引脚12
-    servoRing.attach(ringPin, 500, 2500);     // 将舵机连接到引脚13
-    servoPinky.attach(pinkyPin, 500, 2500);   // 将舵机连接到引脚14
 
     // 启动定时器
     timer = timerBegin(0, 80, true);
@@ -125,7 +114,7 @@ void loop()
 void IRAM_ATTR onTimer()
 {
     // 采集数据
-    voltage[sampleIndex] = analogRead(A0) * 3.3 / 4095.0;
+    voltage[sampleIndex] = analogRead(A19) * 3.3 / 4095.0;
     sampleIndex++;
 
     // 发送数据包
@@ -147,7 +136,7 @@ void controlServo(String command)
     {
         for (int posDegrees = indexAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
         {
-            servoIndex.write(posDegrees);
+            servo.write(indexPin, posDegrees);
             Serial.println(posDegrees);
             delay(20);
         }
@@ -157,7 +146,7 @@ void controlServo(String command)
     {
         for (int posDegrees = pinkyAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
         {
-            servoPinky.write(posDegrees);
+            servo.write(pinkyPin, posDegrees);
             Serial.println(posDegrees);
             delay(20);
         }
@@ -167,7 +156,7 @@ void controlServo(String command)
     {
         for (int posDegrees = middleAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
         {
-            servoMiddle.write(posDegrees);
+            servo.write(middlePin, posDegrees);
             Serial.println(posDegrees);
             delay(20);
         }
@@ -177,7 +166,7 @@ void controlServo(String command)
     {
         for (int posDegrees = ringAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
         {
-            servoRing.write(posDegrees);
+            servo.write(ringPin, posDegrees);
             Serial.println(posDegrees);
             delay(20);
         }
@@ -187,39 +176,40 @@ void controlServo(String command)
     {
         for (int posDegrees = thumbAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
         {
-            servoThumb.write(posDegrees);
+            servo.write(thumbPin, posDegrees);
             Serial.println(posDegrees);
             delay(20);
         }
         thumbAngle = SERVO_ANGLE;
     }
-    else if (command == "休息")
+    else if (command == "休息" && (indexAngle != 0 || pinkyAngle != 0 ||
+                                   middleAngle != 0 || ringAngle != 0 || thumbAngle != 0))
     {
         for (int posDegrees = SERVO_ANGLE; posDegrees >= 0; posDegrees--)
         {
             if (thumbAngle != 0)
             {
-                servoThumb.write(posDegrees);
+                servo.write(thumbPin, posDegrees);
                 thumbAngle = posDegrees;
             }
             if (indexAngle != 0)
             {
-                servoIndex.write(posDegrees);
+                servo.write(indexPin, posDegrees);
                 indexAngle = posDegrees;
             }
             if (middleAngle != 0)
             {
-                servoMiddle.write(posDegrees);
+                servo.write(middlePin, posDegrees);
                 middleAngle = posDegrees;
             }
             if (ringAngle != 0)
             {
-                servoRing.write(posDegrees);
+                servo.write(ringPin, posDegrees);
                 ringAngle = posDegrees;
             }
             if (pinkyAngle != 0)
             {
-                servoPinky.write(posDegrees);
+                servo.write(pinkyPin, posDegrees);
                 pinkyAngle = posDegrees;
             }
             Serial.println(posDegrees);
@@ -227,43 +217,3 @@ void controlServo(String command)
         }
     }
 }
-
-// #include "stdio.h"
-// #include "driver/mcpwm.h"
-// #include "freertos/FreeRTOS.h"
-// #include "freertos/task.h"
-
-// #define PIN_SERVO_PWM 14 // 舵机控制信号引脚，这里假设使用GPIO14
-
-// void servo_init()
-// {
-//     mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, PIN_SERVO_PWM); // 初始化PWM引脚
-//     mcpwm_config_t pwm_config;
-//     pwm_config.frequency = 50; // PWM频率为50Hz
-//     pwm_config.cmpr_a = 0;     // 初始占空比为0
-//     pwm_config.counter_mode = MCPWM_UP_COUNTER;
-//     pwm_config.duty_mode = MCPWM_DUTY_MODE_0;
-//     mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config);
-// }
-
-// void servo_set_angle(float angle)
-// {
-//     uint32_t duty_us = (uint32_t)(500 + angle / 180.0 * 2000);               // 计算占空比对应的脉冲宽度
-//     mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, duty_us); // 设置PWM占空比
-//     mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);                                // 开始PWM输出
-// }
-
-// void app_main()
-// {
-//     servo_init(); // 初始化舵机控制
-//     while (1)
-//     {
-//         // 循环转动舵机
-//         for (float angle = 0; angle <= 180; angle += 10)
-//         {
-//             servo_set_angle(angle);
-//             printf("angle:%lf\n", angle);
-//             vTaskDelay(pdMS_TO_TICKS(100)); // 延时100ms
-//         }
-//     }
-// }
