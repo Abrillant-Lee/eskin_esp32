@@ -125,76 +125,80 @@ void IRAM_ATTR onTimer()
 
 void controlServo(String command)
 {
-    if (command == "食指")
+    static String lastCommand = ""; // 用于记录上次控制的舵机
+    if (command != lastCommand)     // 判断当前要控制的舵机是否与上次相同
     {
-        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        if (command == "食指")
         {
-            servoIndex.write(posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
+            for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+            {
+                servoIndex.write(posDegrees);
+                Serial.println(posDegrees);
+                delay(20);
+            }
         }
-    }
-    else if (command == "小指")
-    {
-        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        else if (command == "小指")
         {
-            servoPinky.write(posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
+            for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+            {
+                servoPinky.write(posDegrees);
+                Serial.println(posDegrees);
+                delay(20);
+            }
         }
-    }
-    else if (command == "中指")
-    {
-        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        else if (command == "中指")
         {
-            servoMiddle.write(posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
+            for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+            {
+                servoMiddle.write(posDegrees);
+                Serial.println(posDegrees);
+                delay(20);
+            }
         }
-    }
-    else if (command == "无名指")
-    {
-        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        else if (command == "无名指")
         {
-            servoRing.write(posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
+            for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+            {
+                servoRing.write(posDegrees);
+                Serial.println(posDegrees);
+                delay(20);
+            }
         }
-    }
-    else if (command == "大拇指")
-    {
-        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        else if (command == "大拇指")
         {
-            servoThumb.write(posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
+            for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+            {
+                servoThumb.write(posDegrees);
+                Serial.println(posDegrees);
+                delay(20);
+            }
         }
-    }
-    else if (command == "休息")
-    {
-        for (int posDegrees = SERVO_ANGLE; posDegrees >= 0; posDegrees--)
+        else if (command == "休息")
         {
-            servoIndex.write(posDegrees);
-            servoMiddle.write(posDegrees);
-            servoPinky.write(posDegrees);
-            servoRing.write(posDegrees);
-            servoThumb.write(posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
+            for (int posDegrees = SERVO_ANGLE; posDegrees >= 0; posDegrees--)
+            {
+                servoIndex.write(posDegrees);
+                servoMiddle.write(posDegrees);
+                servoPinky.write(posDegrees);
+                servoRing.write(posDegrees);
+                servoThumb.write(posDegrees);
+                Serial.println(posDegrees);
+                delay(20);
+            }
         }
-    }
-    else if (command == "胜利手势")
-    {
-        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        else if (command == "胜利手势")
         {
-            servoIndex.write(posDegrees);
-            servoMiddle.write(posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
+            for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+            {
+                servoIndex.write(posDegrees);
+                servoMiddle.write(posDegrees);
+                Serial.println(posDegrees);
+                delay(20);
+            }
         }
-    }
 
-    delay(1000); // 等待舵机转动
+        lastCommand = command; // 更新上次控制的舵机
+    }
 
     // // 将舵机重置到初始位置
     // servoThumb.write(0);
