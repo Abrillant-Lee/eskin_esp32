@@ -27,6 +27,11 @@ void IRAM_ATTR onTimer(); // 定时器中断处理函数
 void controlServo(String command);
 
 Servo servoThumb, servoIndex, servoMiddle, servoRing, servoPinky;
+const uint8_t thumbPin = 2;
+const uint8_t indexPin = 4;
+const uint8_t middlePin = 12;
+const uint8_t ringPin = 13;
+const uint8_t pinkyPin = 14;
 
 void setup()
 {
@@ -122,40 +127,79 @@ void controlServo(String command)
 {
     if (command == "食指")
     {
-        servoIndex.write(SERVO_ANGLE);
+        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        {
+            servoIndex.write(posDegrees);
+            Serial.println(posDegrees);
+            delay(20);
+        }
     }
     else if (command == "小指")
     {
-        servoPinky.write(SERVO_ANGLE);
+        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        {
+            servoPinky.write(posDegrees);
+            Serial.println(posDegrees);
+            delay(20);
+        }
     }
     else if (command == "中指")
     {
-        servoMiddle.write(SERVO_ANGLE);
+        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        {
+            servoMiddle.write(posDegrees);
+            Serial.println(posDegrees);
+            delay(20);
+        }
     }
     else if (command == "无名指")
     {
-        servoRing.write(SERVO_ANGLE);
+        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        {
+            servoRing.write(posDegrees);
+            Serial.println(posDegrees);
+            delay(20);
+        }
     }
     else if (command == "大拇指")
     {
-        servoThumb.write(SERVO_ANGLE);
+        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        {
+            servoThumb.write(posDegrees);
+            Serial.println(posDegrees);
+            delay(20);
+        }
     }
     else if (command == "休息")
     {
-        // 不驱动任何舵机
+        for (int posDegrees = SERVO_ANGLE; posDegrees >= 0; posDegrees--)
+        {
+            servoIndex.write(posDegrees);
+            servoMiddle.write(posDegrees);
+            servoPinky.write(posDegrees);
+            servoRing.write(posDegrees);
+            servoThumb.write(posDegrees);
+            Serial.println(posDegrees);
+            delay(20);
+        }
     }
     else if (command == "胜利手势")
     {
-        servoIndex.write(SERVO_ANGLE);
-        servoMiddle.write(SERVO_ANGLE);
+        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
+        {
+            servoIndex.write(posDegrees);
+            servoMiddle.write(posDegrees);
+            Serial.println(posDegrees);
+            delay(20);
+        }
     }
 
     delay(1000); // 等待舵机转动
 
-    // 将舵机重置到初始位置
-    servoThumb.write(0);
-    servoIndex.write(0);
-    servoMiddle.write(0);
-    servoRing.write(0);
-    servoPinky.write(0);
+    // // 将舵机重置到初始位置
+    // servoThumb.write(0);
+    // servoIndex.write(0);
+    // servoMiddle.write(0);
+    // servoRing.write(0);
+    // servoPinky.write(0);
 }
