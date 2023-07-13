@@ -182,6 +182,24 @@ void controlServo(String command)
         }
         thumbAngle = SERVO_ANGLE;
     }
+    else if (command == "胜利手势" && (indexAngle != SERVO_ANGLE || middleAngle != SERVO_ANGLE))
+    {
+        for (int posDegrees = min(indexAngle, middleAngle); posDegrees <= SERVO_ANGLE; posDegrees++)
+        {
+            if (indexAngle != SERVO_ANGLE)
+            {
+                servo.write(indexPin, posDegrees);
+                indexAngle = posDegrees;
+            }
+            if (middleAngle != SERVO_ANGLE)
+            {
+                servo.write(middlePin, posDegrees);
+                middleAngle = posDegrees;
+            }
+            Serial.println(posDegrees);
+            delay(20);
+        }
+    }
     else if (command == "休息" && (indexAngle != 0 || pinkyAngle != 0 ||
                                    middleAngle != 0 || ringAngle != 0 || thumbAngle != 0))
     {
