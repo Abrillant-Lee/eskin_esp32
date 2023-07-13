@@ -31,14 +31,15 @@ hw_timer_t *timer = NULL; // 定义定时器句柄变量
 
 void IRAM_ATTR onTimer(); // 定时器中断处理函数
 void controlServo(String command);
+void resetFinger(int pin, int *angle);
 
 Servo servo;
 
 const uint8_t thumbPin = 13;
 const uint8_t indexPin = 14;
 const uint8_t middlePin = 15;
-const uint8_t ringPin = 16;
-const uint8_t pinkyPin = 4;
+const uint8_t ringPin = 18;
+const uint8_t pinkyPin = 19;
 
 void setup()
 {
@@ -109,12 +110,19 @@ void loop()
             Serial.println("Connection failed");
         }
     }
+    // 接收串口数据
+    if (Serial.available() > 0)
+    {
+        String command = Serial.readStringUntil('\n');
+        Serial.println(command);
+        controlServo(command);
+    }
 }
 
 void IRAM_ATTR onTimer()
 {
     // 采集数据
-    voltage[sampleIndex] = analogRead(A19) * 3.3 / 4095.0;
+    voltage[sampleIndex] = analogRead(A0) * 3.3 / 4095.0;
     sampleIndex++;
 
     // 发送数据包
@@ -141,6 +149,11 @@ void controlServo(String command)
             delay(20);
         }
         indexAngle = SERVO_ANGLE;
+
+        resetFinger(pinkyPin, &pinkyAngle);
+        resetFinger(middlePin, &middleAngle);
+        resetFinger(ringPin, &ringAngle);
+        resetFinger(thumbPin, &thumbAngle);
     }
     else if (command == "小指" && pinkyAngle != SERVO_ANGLE)
     {
@@ -151,6 +164,11 @@ void controlServo(String command)
             delay(20);
         }
         pinkyAngle = SERVO_ANGLE;
+
+        resetFinger(indexPin, &indexAngle);
+        resetFinger(middlePin, &middleAngle);
+        resetFinger(ringPin, &ringAngle);
+        resetFinger(thumbPin, &thumbAngle);
     }
     else if (command == "中指" && middleAngle != SERVO_ANGLE)
     {
@@ -161,6 +179,11 @@ void controlServo(String command)
             delay(20);
         }
         middleAngle = SERVO_ANGLE;
+
+        resetFinger(pinkyPin, &pinkyAngle);
+        resetFinger(indexPin, &indexAngle);
+        resetFinger(ringPin, &ringAngle);
+        resetFinger(thumbPin, &thumbAngle);
     }
     else if (command == "无名指" && ringAngle != SERVO_ANGLE)
     {
@@ -171,6 +194,11 @@ void controlServo(String command)
             delay(20);
         }
         ringAngle = SERVO_ANGLE;
+
+        resetFinger(pinkyPin, &pinkyAngle);
+        resetFinger(middlePin, &middleAngle);
+        resetFinger(indexPin, &indexAngle);
+        resetFinger(thumbPin, &thumbAngle);
     }
     else if (command == "大拇指" && thumbAngle != SERVO_ANGLE)
     {
@@ -181,6 +209,11 @@ void controlServo(String command)
             delay(20);
         }
         thumbAngle = SERVO_ANGLE;
+
+        resetFinger(pinkyPin, &pinkyAngle);
+        resetFinger(middlePin, &middleAngle);
+        resetFinger(ringPin, &ringAngle);
+        resetFinger(indexPin, &thumbAngle);
     }
     else if (command == "胜利手势" && (indexAngle != SERVO_ANGLE || middleAngle != SERVO_ANGLE))
     {
@@ -199,6 +232,12 @@ void controlServo(String command)
             Serial.println(posDegrees);
             delay(20);
         }
+        indexAngle = SERVO_ANGLE;
+        middleAngle = SERVO_ANGLE;
+
+        resetFinger(pinkyPin, &pinkyAngle);
+        resetFinger(ringPin, &ringAngle);
+        resetFinger(thumbPin, &thumbAngle);
     }
     else if (command == "休息" && (indexAngle != 0 || pinkyAngle != 0 ||
                                    middleAngle != 0 || ringAngle != 0 || thumbAngle != 0))
@@ -233,5 +272,20 @@ void controlServo(String command)
             Serial.println(posDegrees);
             delay(20);
         }
+        thumbAngle = 0;
+        indexAngle = 0;
+        middleAngle = 0;
+        ringAngle = 0;
+        pinkyAngle = 0;
     }
+}
+
+void resetFinger(int pin, int *angle)
+{
+    for (int posDegrees = *angle; posDegrees >= 0; posDegrees--)
+    {
+        servo.write(pin, posDegrees);
+        delay(20);
+    }
+    *angle = 0;
 }
