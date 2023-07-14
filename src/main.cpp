@@ -1,35 +1,14 @@
-#include <WiFi.h>
-#include <WiFiClient.h>
 #include <Servo.h>
 
-const char *ssid = "AvA";
-const char *password = "25802580";
-const char *serverIP = "20.189.79.217";
-const int serverPort = 2333;
-const char *esp32Token = "ESP32";
+const int touchPin = T0;
+const int ledPin = LED_BUILTIN;
 
-const int SAMPLE_INTERVAL = 5;                             // 采样间隔，单位为毫秒
-const int SAMPLE_COUNT = 79;                               // 每个数据包包含的采样数量
-const int PACKET_INTERVAL = 1000;                          // 发送数据包的间隔，单位为毫秒
-const int TIMER_INTERVAL = SAMPLE_INTERVAL * SAMPLE_COUNT; // 定时器间隔，单位为毫秒
+const int threshold = 30;
+
+int touchValue;
 
 const int SERVO_ANGLE = 180;
 
-float voltage[SAMPLE_COUNT];
-int sampleIndex = 0;
-int packetIndex = 0;
-
-int thumbAngle = SERVO_ANGLE;
-int indexAngle = 0;
-int middleAngle = 0;
-int ringAngle = 0;
-int pinkyAngle = SERVO_ANGLE;
-
-WiFiClient client;
-
-hw_timer_t *timer = NULL; // 定义定时器句柄变量
-
-void IRAM_ATTR onTimer(); // 定时器中断处理函数
 void controlServo(String command);
 
 Servo servo;
@@ -40,140 +19,75 @@ const uint8_t middlePin = 15;
 const uint8_t ringPin = 18;
 const uint8_t pinkyPin = 19;
 
+// 添加一个变量来记录当前状态，0表示握拳，1表示张开
+int handState = 0;
+
 void setup()
 {
     servo.write(indexPin, 0);
     servo.write(middlePin, 0);
-    servo.write(pinkyPin, 0);
+    servo.write(pinkyPin, 180);
     servo.write(ringPin, 0);
-    servo.write(thumbPin, 0);
+    servo.write(thumbPin, 180);
 
     Serial.begin(115200);
-    WiFi.begin(ssid, password);
 
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        delay(1000);
-        Serial.println("Connecting to WiFi...");
-    }
-
-    Serial.println("Connected to WiFi");
-
-    // 启动定时器
-    timer = timerBegin(0, 80, true);
-    timerAttachInterrupt(timer, &onTimer, true);
-    timerAlarmWrite(timer, TIMER_INTERVAL * 10, true);
-    timerAlarmEnable(timer);
+    pinMode(ledPin, OUTPUT);
 }
 
 void loop()
 {
-    // 发送数据包
-    if (packetIndex > 0 && client.connected())
+    touchValue = touchRead(touchPin);
+    Serial.println(touchValue);
+
+    if (touchValue < threshold)
     {
-        String dataPacket;
-        for (int i = 0; i < SAMPLE_COUNT - 1; i++)
+        digitalWrite(ledPin, HIGH);
+        // 如果当前状态是握拳，才改变状态并调用controlServo函数
+        if (handState == 0)
         {
-            dataPacket += String(voltage[i], 6) + ",";
-        }
-        dataPacket += String(voltage[SAMPLE_COUNT - 1], 6);
-
-        int rssi = WiFi.RSSI();
-        dataPacket += "," + String(rssi);
-
-        dataPacket += "\n"; // 添加换行符
-
-        // Serial.print("Sending data packet: ");
-        // Serial.println(dataPacket);
-
-        client.print(dataPacket);
-        String response = client.readStringUntil('\n');
-        Serial.println(response);
-
-        controlServo(response); // 根据响应控制舵机
-
-        packetIndex = 0;
-    }
-    else if (packetIndex == 0 && !client.connected())
-    {
-        // 连接服务器
-        if (client.connect(serverIP, serverPort))
-        {
-            Serial.println("Connected to server");
-            // 发送身份验证消息
-            client.print(esp32Token);
-            client.print('\n');
-        }
-        else
-        {
-            Serial.println("Connection failed");
+            handState = 1;
+            controlServo("1");
         }
     }
-    // 接收串口数据
-    if (Serial.available() > 0)
+    else
     {
-        String command = Serial.readStringUntil('\n');
-        Serial.println(command);
-        controlServo(command);
-    }
-}
-
-void IRAM_ATTR onTimer()
-{
-    // 采集数据
-    voltage[sampleIndex] = analogRead(A0) * 3.3 / 4095.0;
-    sampleIndex++;
-
-    // 发送数据包
-    if (sampleIndex == SAMPLE_COUNT)
-    {
-        sampleIndex = 0;
-        packetIndex++;
-
-        if (packetIndex >= PACKET_INTERVAL / TIMER_INTERVAL)
+        digitalWrite(ledPin, LOW);
+        // 如果当前状态是张开，才改变状态并调用controlServo函数
+        if (handState == 1)
         {
-            packetIndex = 0;
+            handState = 0;
+            controlServo("0");
         }
     }
 }
+
 void controlServo(String command)
 {
-    if (command == "握拳")
+    if (command == "1")
     {
-        // 闭合所有的手指
         for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
         {
-            servo.write(pinkyPin, posDegrees);
+            servo.write(pinkyPin, 180 - posDegrees);
             servo.write(indexPin, posDegrees);
             servo.write(middlePin, posDegrees);
             servo.write(ringPin, posDegrees);
-            servo.write(thumbPin, posDegrees);
-            Serial.println(posDegrees);
+            servo.write(thumbPin, 180 - posDegrees);
             delay(20);
         }
-        pinkyAngle = SERVO_ANGLE;
-        indexAngle = SERVO_ANGLE;
-        middleAngle = SERVO_ANGLE;
-        ringAngle = SERVO_ANGLE;
-        thumbAngle = SERVO_ANGLE;
+        Serial.println("张开");
     }
-    else if (command == "张开")
+    else if (command == "0")
     {
-        // 展开所有的手指
         for (int posDegrees = SERVO_ANGLE; posDegrees >= 0; posDegrees--)
         {
-            servo.write(pinkyPin, posDegrees);
+            servo.write(pinkyPin, 180 - posDegrees);
             servo.write(indexPin, posDegrees);
             servo.write(middlePin, posDegrees);
             servo.write(ringPin, posDegrees);
-            servo.write(thumbPin, posDegrees);
-            Serial.println(posDegrees);
+            servo.write(thumbPin, 180 - posDegrees);
             delay(20);
         }
-        pinkyAngle = 0;
-        indexAngle = 0;
-        middleAngle = 0;
-        ringAngle = 0;
-        thumbAngle = 0;
+        Serial.println("握拳");
     }
 }
