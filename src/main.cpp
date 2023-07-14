@@ -13,17 +13,17 @@ const int SAMPLE_COUNT = 79;                               // 每个数据包包
 const int PACKET_INTERVAL = 1000;                          // 发送数据包的间隔，单位为毫秒
 const int TIMER_INTERVAL = SAMPLE_INTERVAL * SAMPLE_COUNT; // 定时器间隔，单位为毫秒
 
-const int SERVO_ANGLE = 90;
+const int SERVO_ANGLE = 180;
 
 float voltage[SAMPLE_COUNT];
 int sampleIndex = 0;
 int packetIndex = 0;
 
-int thumbAngle = 0;
+int thumbAngle = SERVO_ANGLE;
 int indexAngle = 0;
 int middleAngle = 0;
 int ringAngle = 0;
-int pinkyAngle = 0;
+int pinkyAngle = SERVO_ANGLE;
 
 WiFiClient client;
 
@@ -31,7 +31,6 @@ hw_timer_t *timer = NULL; // 定义定时器句柄变量
 
 void IRAM_ATTR onTimer(); // 定时器中断处理函数
 void controlServo(String command);
-void resetFinger(int pin, int *angle);
 
 Servo servo;
 
@@ -137,155 +136,44 @@ void IRAM_ATTR onTimer()
         }
     }
 }
-
 void controlServo(String command)
 {
-    if (command == "食指" && indexAngle != SERVO_ANGLE)
+    if (command == "握拳")
     {
-        for (int posDegrees = indexAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
-        {
-            servo.write(indexPin, posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
-        }
-        indexAngle = SERVO_ANGLE;
-
-        resetFinger(pinkyPin, &pinkyAngle);
-        resetFinger(middlePin, &middleAngle);
-        resetFinger(ringPin, &ringAngle);
-        resetFinger(thumbPin, &thumbAngle);
-    }
-    else if (command == "小指" && pinkyAngle != SERVO_ANGLE)
-    {
-        for (int posDegrees = pinkyAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
+        // 闭合所有的手指
+        for (int posDegrees = 0; posDegrees <= SERVO_ANGLE; posDegrees++)
         {
             servo.write(pinkyPin, posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
-        }
-        pinkyAngle = SERVO_ANGLE;
-
-        resetFinger(indexPin, &indexAngle);
-        resetFinger(middlePin, &middleAngle);
-        resetFinger(ringPin, &ringAngle);
-        resetFinger(thumbPin, &thumbAngle);
-    }
-    else if (command == "中指" && middleAngle != SERVO_ANGLE)
-    {
-        for (int posDegrees = middleAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
-        {
+            servo.write(indexPin, posDegrees);
             servo.write(middlePin, posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
-        }
-        middleAngle = SERVO_ANGLE;
-
-        resetFinger(pinkyPin, &pinkyAngle);
-        resetFinger(indexPin, &indexAngle);
-        resetFinger(ringPin, &ringAngle);
-        resetFinger(thumbPin, &thumbAngle);
-    }
-    else if (command == "无名指" && ringAngle != SERVO_ANGLE)
-    {
-        for (int posDegrees = ringAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
-        {
             servo.write(ringPin, posDegrees);
-            Serial.println(posDegrees);
-            delay(20);
-        }
-        ringAngle = SERVO_ANGLE;
-
-        resetFinger(pinkyPin, &pinkyAngle);
-        resetFinger(middlePin, &middleAngle);
-        resetFinger(indexPin, &indexAngle);
-        resetFinger(thumbPin, &thumbAngle);
-    }
-    else if (command == "大拇指" && thumbAngle != SERVO_ANGLE)
-    {
-        for (int posDegrees = thumbAngle; posDegrees <= SERVO_ANGLE; posDegrees++)
-        {
             servo.write(thumbPin, posDegrees);
             Serial.println(posDegrees);
             delay(20);
         }
-        thumbAngle = SERVO_ANGLE;
-
-        resetFinger(pinkyPin, &pinkyAngle);
-        resetFinger(middlePin, &middleAngle);
-        resetFinger(ringPin, &ringAngle);
-        resetFinger(indexPin, &thumbAngle);
-    }
-    else if (command == "胜利手势" && (indexAngle != SERVO_ANGLE || middleAngle != SERVO_ANGLE))
-    {
-        for (int posDegrees = min(indexAngle, middleAngle); posDegrees <= SERVO_ANGLE; posDegrees++)
-        {
-            if (indexAngle != SERVO_ANGLE)
-            {
-                servo.write(indexPin, posDegrees);
-                indexAngle = posDegrees;
-            }
-            if (middleAngle != SERVO_ANGLE)
-            {
-                servo.write(middlePin, posDegrees);
-                middleAngle = posDegrees;
-            }
-            Serial.println(posDegrees);
-            delay(20);
-        }
+        pinkyAngle = SERVO_ANGLE;
         indexAngle = SERVO_ANGLE;
         middleAngle = SERVO_ANGLE;
-
-        resetFinger(pinkyPin, &pinkyAngle);
-        resetFinger(ringPin, &ringAngle);
-        resetFinger(thumbPin, &thumbAngle);
+        ringAngle = SERVO_ANGLE;
+        thumbAngle = SERVO_ANGLE;
     }
-    else if (command == "休息" && (indexAngle != 0 || pinkyAngle != 0 ||
-                                   middleAngle != 0 || ringAngle != 0 || thumbAngle != 0))
+    else if (command == "张开")
     {
+        // 展开所有的手指
         for (int posDegrees = SERVO_ANGLE; posDegrees >= 0; posDegrees--)
         {
-            if (thumbAngle != 0)
-            {
-                servo.write(thumbPin, posDegrees);
-                thumbAngle = posDegrees;
-            }
-            if (indexAngle != 0)
-            {
-                servo.write(indexPin, posDegrees);
-                indexAngle = posDegrees;
-            }
-            if (middleAngle != 0)
-            {
-                servo.write(middlePin, posDegrees);
-                middleAngle = posDegrees;
-            }
-            if (ringAngle != 0)
-            {
-                servo.write(ringPin, posDegrees);
-                ringAngle = posDegrees;
-            }
-            if (pinkyAngle != 0)
-            {
-                servo.write(pinkyPin, posDegrees);
-                pinkyAngle = posDegrees;
-            }
+            servo.write(pinkyPin, posDegrees);
+            servo.write(indexPin, posDegrees);
+            servo.write(middlePin, posDegrees);
+            servo.write(ringPin, posDegrees);
+            servo.write(thumbPin, posDegrees);
             Serial.println(posDegrees);
             delay(20);
         }
-        thumbAngle = 0;
+        pinkyAngle = 0;
         indexAngle = 0;
         middleAngle = 0;
         ringAngle = 0;
-        pinkyAngle = 0;
+        thumbAngle = 0;
     }
-}
-
-void resetFinger(int pin, int *angle)
-{
-    for (int posDegrees = *angle; posDegrees >= 0; posDegrees--)
-    {
-        servo.write(pin, posDegrees);
-        delay(20);
-    }
-    *angle = 0;
 }
